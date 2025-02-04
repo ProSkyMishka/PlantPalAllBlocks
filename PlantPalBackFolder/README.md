@@ -1,11 +1,9 @@
 # PlantPalBack
 ### Vapor Backend
 ##### https://github.com/ProSkyMishka/PlantPalBack.git
-### SwiftUI App
-##### https://github.com/ProSkyMishka/PlantPal.git
+### Flutter Dart App
+##### https://github.com/ProSkyMishka/PlantPalClientDart.git
 ### Flask server with ML-models
 ##### https://github.com/ProSkyMishka/PlantPalModelService.git
-### Web-Client
-##### https://github.com/ProSkyMishka/PlantPalWebClient.git
-### MicroPython code for Raspberry Pi Pico W
-##### https://github.com/ProSkyMishka/PlantPalRP.git
+### C++ code for NodeMCU esp8266
+##### https://github.com/ProSkyMishka/RelayManagingWithMQTT.git

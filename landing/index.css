@@ -1,0 +1,274 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background-color: #ffffff;
+    text-align: center;
+    animation: fadeIn 1s ease-in;
+}
+
+header {
+    background: #ffffff;
+    padding: 10px 5%;
+    position: fixed;
+    width: 90%;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header img {
+    width: 5vw;
+    max-width: 20px;
+    min-width: 10px;
+    height: auto;
+}
+
+header nav ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 2vw;
+    margin: 0;
+}
+
+header nav ul li {
+    display: inline;
+}
+
+header nav ul li a {
+    text-decoration: none;
+    color: #4a752c;
+    font-weight: bold;
+    font-size: min(2.5vw, 2.5vh);
+}
+
+h1, h2, h3 {
+    color: #ffffff;
+    font-size: min(3.5vw, 6vh);
+    text-align: left;
+    margin-left: 8vw;
+}
+
+h2 {
+    font-size: min(3vw, 5vh);
+}
+
+h3 {
+    font-size: min(2.5vw, 4vh);
+}
+
+.intro {
+    margin: 70px 0;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1708 / 844;
+    background-image: url(images/fon.png);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: space-around;
+}
+
+.intro h1 {
+    padding-top: 10%;
+}
+
+.intro p {
+    padding: 3vh 2vw;
+    color: #ffffff;
+    font-size: min(3vw, 5vh);
+}
+
+.work, .descrip {
+    display: flex;
+    align-items: center;
+}
+
+.descrip {
+    justify-content: space-around;
+}
+
+.work h1 {
+    color: #8BBE81;
+    width: 50vw;
+}
+
+.work img {
+    width: 50vw;
+    height: auto;
+}
+
+.descrip figure {
+    width: 35vw;
+}
+
+.descrip img {
+    width: 10vw;
+}
+
+.descrip p {
+    width: 70vw;
+    margin: 5vw;
+    font-size: min(2.5vw, 2.5vh);
+}
+
+.app {
+    background: #8BBE81;
+    border-radius: 7.5%;
+    padding: 5vh 0;
+}
+
+.app img {
+    margin: 5vh 0;
+    width: 7vw;
+    border-radius: 20%;
+}
+
+.app p, .qr {
+    color: #ffffff;
+    font-size: min(2vw, 4vh);
+}
+
+.qr {
+    padding: 5vh 0;
+    margin-top: 5vh;
+    font-size: min(1.5vw, 3vh);
+}
+
+.app-buttons img {
+    border-radius: 0%;
+    padding: 0 4vw;
+    width: 10vw;
+}
+
+.app-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 5vw;
+}
+
+.app-buttons button, .product button {
+    margin-top: 3vw;
+    background: #88b04b;
+    border: none;
+    padding: 1vh 0;
+    width: 15vw;
+    color: white;
+    font-size: min(1.5vw, 3vh);
+    border-radius: calc((min(1.5vw, 3vh) + 1vh) / 2);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.app-buttons button:hover, .able:hover {
+    background: #6a8e3b;
+}
+
+.products h2 {
+    color: #8BBE81;
+    margin-top: 10vh;
+}
+
+.products .product {
+    width: 75%;
+    height: auto;
+    aspect-ratio: 2215 / 696;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-image: url(images/productFon.png);
+    padding: 4vw 0;
+    margin: 5vw 0;
+    text-align: left;
+}
+
+.products .second {
+    text-align: right;
+    aspect-ratio: 2270 / 696;
+    background-image: url(images/productLeftFon.png);
+    margin: 5vw 0 5vw auto;
+}
+
+.product .container {
+    display: flex;
+    justify-content: space-around;
+    margin: 0 5vw;
+    align-items: center;
+    gap: 5vw;
+}
+
+.product img {
+    width: 20vw;
+}
+
+.product h3 {
+    text-align: left;
+}
+
+.second h3 {
+    text-align: right;
+    margin-right: 8vw;
+}
+
+.product p {
+    color: #ffffff;
+    font-size: min(1.5vw, 2.5vh);
+    text-align: left;
+}
+
+.second p {
+    text-align: right;
+}
+
+.product button {
+    margin: 0;
+    padding: 0.5vh 0;
+    margin-left: 8vw;
+}
+
+.second button {
+    margin: 0;
+    margin-right: 8vw;
+}
+
+.product button:disabled {
+    background: #898989;
+    color: #CBCBCB;
+}
+
+footer {
+    background: url(images/footer.png);
+    color: white;
+    height: auto;
+    aspect-ratio: 856 / 235;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+/* @keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+} */

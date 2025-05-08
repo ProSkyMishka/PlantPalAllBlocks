@@ -20,10 +20,11 @@ final class Plant: Model, Content {
     @Field(key: "waterInterval") var waterInterval: Int
     @Field(key: "seconds") var seconds: Int
     @Field(key: "MLID") var MLID: String
+    @Field(key: "usered") var usered: Bool
     
     init() { }
     
-    init(id: UUID? = nil, name: String, description: String, imageURL: String, temp: String, humidity: String, waterInterval: Int, seconds: Int, MLID: String) {
+    init(id: UUID? = nil, name: String, description: String, imageURL: String, temp: String, humidity: String, waterInterval: Int, seconds: Int, MLID: String, usered: Bool) {
         self.id = id
         self.name = name
         self.description = description
@@ -33,5 +34,6 @@ final class Plant: Model, Content {
         self.waterInterval = waterInterval
         self.seconds = seconds
         self.MLID = MLID
+        self.usered = usered
     }
 }

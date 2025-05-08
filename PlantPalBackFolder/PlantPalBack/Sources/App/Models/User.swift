@@ -9,37 +9,35 @@ import Fluent
 import Vapor
 
 final class User: Model, Content {
+    init() { }
+    
     static var schema: String = "users"
     
     @ID var id: UUID?
-    @Field(key: "name") var name: String
     @Field(key: "password") var password: String
     @Field(key: "login") var login: String
-//    @Field(key: "language") var language: String
-    @Field(key: "avatar") var avatar: String
     @Field(key: "flowers") var flowers: [String]
-//    @Field(key: "role") var role: String
-    @Field(key: "likes") var likes: [String]
+    @Field(key: "email") var email: String
+    
+    init(id: UUID? = nil, password: String, login: String, flowers: [String], email: String) {
+        self.id = id
+        self.password = password
+        self.login = login
+        self.flowers = flowers
+        self.email = email
+    }
     
     final class Public: Content {
         var id: UUID?
-        var name: String
         var login: String
-//        var language: String
-        var avatar: String
         var flowers: [String]
-//        var role: String
-        var likes: [String]
+        var email: String
         
-        init(id: UUID? = nil, name: String, login: String, /*language: String,*/ avatar: String, flowers: [String], /*role: String,*/ likes: [String]) {
+        init(id: UUID? = nil, login: String, flowers: [String], email: String) {
             self.id = id
-            self.name = name
             self.login = login
-//            self.language = language
-            self.avatar = avatar
             self.flowers = flowers
-//            self.role = role
-            self.likes = likes
+            self.email = email
         }
     }
 }
@@ -55,7 +53,7 @@ extension User: ModelAuthenticatable {
 
 extension User {
     func convertToPublic() -> User.Public {
-        let pub = Public(id: self.id, name: self.name, login: self.login, /*language: self.language,*/ avatar: self.avatar, flowers: self.flowers/*, role: self.role*/, likes: self.likes)
+        let pub = Public(id: self.id, login: self.login, flowers: self.flowers, email: self.email)
         return pub
     }
 }

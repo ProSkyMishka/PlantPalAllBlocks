@@ -12,14 +12,10 @@ struct CreateUser: AsyncMigration {
     func prepare(on database: FluentKit.Database) async throws {
         let schema = database.schema("users")
             .id()
-            .field("name", .string, .required)
             .field("password", .string, .required)
             .field("login", .string, .required)
-//            .field("languige", .string, .required)
-            .field("avatar", .string)
             .field("flowers", .array(of: .string))
-//            .field("role", .string, .required)
-            .field("likes", .array(of: .string))
+            .field("email", .string, .required)
             .unique(on: "login")
         
         try await schema.create()

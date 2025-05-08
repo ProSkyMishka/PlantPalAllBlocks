@@ -20,6 +20,7 @@ struct CreatePlant: AsyncMigration {
             .field("waterInterval", .int)
             .field("seconds", .int, .required)
             .field("MLID", .string, .required)
+            .field("usered", .bool, .required)
         
         try await schema.create()
     }

@@ -17,6 +17,8 @@ public func configure(_ app: Application) async throws {
         database: Environment.get("DATABASE_NAME") ?? "plantpal_database",
         tls: .prefer(try .init(configuration: .clientDefault)))
     ), as: .psql)
+    
+    app.jwt.signers.use(.hs256(key: "your-secret-key"))
 
     app.migrations.add(CreateDisease())
     app.migrations.add(CreateDrug())
@@ -33,9 +35,8 @@ public func configure(_ app: Application) async throws {
         allowedHeaders: [.accept, .authorization, .contentType, .origin, .xRequestedWith, .userAgent, .accessControlAllowOrigin]
     )
     let cors = CORSMiddleware(configuration: corsConfiguration)
-    // cors middleware should come before default error middleware using at: .beginning
+    
     app.middleware.use(cors, at: .beginning)
 
-    // register routes
     try routes(app)
 }

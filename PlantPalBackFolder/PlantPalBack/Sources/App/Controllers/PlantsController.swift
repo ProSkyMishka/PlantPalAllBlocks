@@ -12,20 +12,22 @@ struct PlantsController: RouteCollection {
         let plantsGroup = routes.grouped("plants")
         
         plantsGroup.get(use: getAllHandler)
-//        plantsGroup.post(use: createHandler)
-        plantsGroup.get(":MLID", use: getHandler)
-//        plantsGroup.put(":id", use: updateHandler)
+        plantsGroup.get("ml", ":MLID", use: getHandler)
+        let protected = plantsGroup.grouped(JWTMiddleware())
+        protected.get(":id", use: getHandlerById)
+        protected.put(":id", use: updateHandler)
+        protected.post("create", use: createHandler)
     }
     
     
     @Sendable func createHandler(_ req: Request) async throws -> Plant {
-        guard let plant = try? req.content.decode(Plant.self) else {
-            throw Abort(.custom(code: 499, reasonPhrase: "Не получилось декодировать контент в модель продукта"))
-        }
+        let plant = try req.content.decode(Plant.self)
         
-        try await plant.save(on: req.db)
+        let newPlant = Plant(name: plant.name, description: plant.description, imageURL: plant.imageURL, temp: plant.temp, humidity: plant.humidity, waterInterval: plant.waterInterval, seconds: plant.seconds, MLID: plant.MLID, usered: plant.usered)
         
-        return plant
+        try await newPlant.save(on: req.db)
+        
+        return newPlant
     }
     
     @Sendable func updateHandler(_ req: Request) async throws -> Plant {
@@ -43,6 +45,7 @@ struct PlantsController: RouteCollection {
         plant.waterInterval = plantUpdate.waterInterval
         plant.seconds = plantUpdate.seconds
         plant.MLID = plantUpdate.MLID
+        plant.usered = true
         
         try await plant.save(on: req.db)
         
@@ -54,6 +57,21 @@ struct PlantsController: RouteCollection {
         guard let plant = try await Plant
             .query(on: req.db)
             .filter("MLID", .equal, mlid)
+            .filter("usered", .equal, false)
+            .first() else {
+            throw Abort(.notFound)
+        }
+        return plant
+    }
+    
+    @Sendable func getHandlerById(_ req: Request) async throws -> Plant {
+        let inputId = req.parameters.get("id")
+        guard let id = UUID(uuidString: inputId ?? "") else {
+            throw Abort(.badRequest, reason: "Invalid UUID format.")
+        }
+        guard let plant = try await Plant
+            .query(on: req.db)
+            .filter("id", .equal, id)
             .first() else {
             throw Abort(.notFound)
         }

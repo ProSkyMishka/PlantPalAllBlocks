@@ -1,88 +1,143 @@
 //
-//  UsersController.swift
+//  AuthController.swift
 //
 //
-//  Created by Михаил Прозорский on 05.07.2024.
+//  Created by Михаил Прозорский on 21.11.2024.
 //
 
 import Vapor
+import Fluent
+import JWT
 
-struct UsersController: RouteCollection {
-    func boot(routes: Vapor.RoutesBuilder) throws {
-        let usersGroup = routes.grouped("users")
-        usersGroup.post("signIn", use: createHandler)
-        usersGroup.post("auth", use: authHandler)
-        
-        let basicMW = User.authenticator()
-        let guardMW = User.guardMiddleware()
-        let protectedGroup = usersGroup.grouped(basicMW, guardMW)
-        
-        protectedGroup.get(use: getHandler)
-        protectedGroup.put(":id", use: updateHandler)
+struct AuthController: RouteCollection {
+    func boot(routes: RoutesBuilder) throws {
+        let auth = routes.grouped("auth")
+        auth.post("register", use: register)
+        auth.post("login", use: login)
+
+        let protected = auth.grouped(JWTMiddleware())
+        protected.get("me", use: getCurrentUser)
+        protected.put("update", use: update)
     }
-    
-    
-    @Sendable func createHandler(_ req: Request) async throws -> User.Public {
-        guard let user = try? req.content.decode(User.self) else {
-            throw Abort(.custom(code: 499, reasonPhrase: "Не получилось декодировать контент в модель продукта"))
+
+    @Sendable
+    func register(req: Request) async throws -> TokenResponse {
+        let input = try req.content.decode(RegisterRequest.self)
+        
+        guard try await User.query(on: req.db)
+                .filter(\.$login == input.login)
+                .first() == nil else {
+            throw Abort(.badRequest, reason: "Username is already taken")
         }
+
+        let hashedPassword = try Bcrypt.hash(input.password)
+        let newUser = User(password: hashedPassword, login: input.login, flowers: [], email: input.email)
+        try await newUser.save(on: req.db)
         
-        user.password = try Bcrypt.hash(user.password)
-        try await user.save(on: req.db)
-        
-        return user.convertToPublic()
+        let payload = UserPayload(userID: try newUser.requireID())
+        let token = try req.jwt.sign(payload)
+        return TokenResponse(token: token)
     }
-    
-    @Sendable func updateHandler(_ req: Request) async throws -> User.Public {
-        guard let user = try await User.find(req.parameters.get("id"), on: req.db) else {
-            throw Abort(.notFound)
-        }
+
+    @Sendable
+    func login(req: Request) async throws -> TokenResponse {
+        let input = try req.content.decode(LoginRequest.self)
         
-        let userUpdate = try req.content.decode(User.self)
-        
-        userUpdate.password = try Bcrypt.hash(userUpdate.password)
-        
-        user.name = userUpdate.name
-        user.password = userUpdate.password
-        user.login = userUpdate.login
-//        user.language = userUpdate.language
-        user.avatar = userUpdate.avatar
-        user.flowers = userUpdate.flowers
-//        user.role = userUpdate.role
-        user.likes = userUpdate.likes
-        
-        try await user.save(on: req.db)
-        
-        return user.convertToPublic()
-    }
-    
-    @Sendable func getHandler(_ req: Request) async throws -> User.Public {
-        guard let user = req.auth.get(User.self) else {
-            throw Abort(.unauthorized)
-        }
-        return user.convertToPublic()
-    }
-    
-    @Sendable func authHandler(_ req: Request) async throws -> User.Public {
-        let userDTO = try req.content.decode(AuthUserDTO.self)
         guard let user = try await User
             .query(on: req.db)
-            .filter("login", .equal, userDTO.login)
-            .first() else {
-            throw Abort(.unauthorized)
+            .filter(\.$login == input.login)
+            .first()
+        else { throw Abort(.notFound) }
+
+        guard try Bcrypt.verify(input.password, created: user.password) else {
+            throw Abort(.unauthorized, reason: "Invalid username or password")
+        }
+
+        let payload = UserPayload(userID: try user.requireID())
+        let token = try req.jwt.sign(payload)
+        return TokenResponse(token: token)
+    }
+
+    @Sendable
+    func getCurrentUser(req: Request) async throws -> User.Public {
+        let payload = try req.auth.require(UserPayload.self)
+        guard let user = try await User.find(payload.userID, on: req.db) else {
+            throw Abort(.notFound)
+        }
+        return user.convertToPublic()
+    }
+    
+    @Sendable
+    func update(req: Request) async throws -> User.Public {
+        let payload = try req.auth.require(UserPayload.self)
+        guard let user = try await User.find(payload.userID, on: req.db) else {
+            throw Abort(.notFound, reason: "User not found")
         }
         
-        let isPassEqual = try Bcrypt.verify(userDTO.password, created: user.password)
+        let input = try req.content.decode(UpdateUserRequest.self)
         
-        guard isPassEqual else {
-            throw Abort(.unauthorized)
+        if input.login != user.login {
+            guard try await User.query(on: req.db)
+                    .filter(\.$login == input.login)
+                    .first() == nil else {
+                throw Abort(.badRequest, reason: "Username is already taken")
+            }
         }
+        
+        user.email = input.email
+        user.login = input.login
+        user.flowers = input.flowers
+        print(user.flowers)
+        
+        try await user.save(on: req.db)
         
         return user.convertToPublic()
     }
 }
 
-struct AuthUserDTO: Content {
+struct UpdateUserRequest: Content {
     let login: String
-    var password: String
+    let email: String
+    let flowers: [String]
+}
+
+struct RegisterRequest: Content {
+    let login: String
+    let email: String
+    let password: String
+}
+
+struct LoginRequest: Content {
+    let login: String
+    let password: String
+}
+
+struct TokenResponse: Content {
+    let token: String
+}
+
+struct UserPayload: JWTPayload, Authenticatable {
+    var userID: UUID
+    var exp: ExpirationClaim
+
+    init(userID: UUID) {
+        self.userID = userID
+        self.exp = .init(value: Date().addingTimeInterval(60 * 60 * 24))
+    }
+
+    func verify(using signer: JWTSigner) throws {
+        try exp.verifyNotExpired()
+    }
+}
+
+struct JWTMiddleware: AsyncMiddleware {
+    func respond(to req: Request, chainingTo next: AsyncResponder) async throws -> Response {
+        let token = req.headers.bearerAuthorization?.token
+        guard let token = token else {
+            throw Abort(.unauthorized, reason: "Missing or invalid token")
+        }
+
+        req.auth.login(try req.jwt.verify(token, as: UserPayload.self))
+        return try await next.respond(to: req)
+    }
 }

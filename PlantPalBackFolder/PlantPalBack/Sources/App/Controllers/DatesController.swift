@@ -13,8 +13,9 @@ struct DatesController: RouteCollection {
     func boot(routes: Vapor.RoutesBuilder) throws {
         let datesGroup = routes.grouped("dates")
         
-        datesGroup.get(":device_id", use: getHandler)
-        datesGroup.post(use: postHandler)
+        let protected = datesGroup.grouped(JWTMiddleware())
+        protected.get(":device_id", use: getHandler)
+        protected.post(use: postHandler)
     }
     
     @Sendable func postHandler(_ req: Request) async throws -> [WateringDate] {

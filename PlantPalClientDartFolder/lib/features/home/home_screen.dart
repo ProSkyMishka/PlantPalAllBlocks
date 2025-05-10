@@ -17,10 +17,11 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF01262E),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          context.push('/detect');
-          await ref.read(homeControllerProvider.notifier);
-          state = ref.watch(homeControllerProvider);
+        onPressed: ()  async {
+          final result = await context.push('/detect');
+          if (result == 'updated') {
+            await ref.read(homeControllerProvider.notifier).loadPlants();
+          }
         },
         backgroundColor: const Color(0xFF709E1F),
         child: const Icon(Icons.add, color: Colors.white, size: 32),
@@ -174,7 +175,12 @@ class HomeScreen extends ConsumerWidget {
                         itemBuilder: (ctx, i) {
                           final plant = state.filtered[i];
                           return GestureDetector(
-                            onTap: () => context.push('/plant/${plant.id}'),
+                            onTap: () async {
+                              final result = await context.push('/plant/${plant.id}');
+                              if (result == 'updated') {
+                                await ref.read(homeControllerProvider.notifier).loadPlants();
+                              }
+                            },
                             child: Stack(
                               children: [
                                 Container(

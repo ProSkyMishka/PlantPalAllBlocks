@@ -8,7 +8,7 @@ import '../models/plant_model.dart';
 import 'local_storage.dart';
 
 class PlantService {
-  static const String baseUrl = 'http://localhost:8080/plants'; // URL сервера
+  static const String baseUrl = 'http://158.160.131.34:8080/plants'; // URL сервера
 
   final auth = AuthService();
   final _storage = LocalStorage();

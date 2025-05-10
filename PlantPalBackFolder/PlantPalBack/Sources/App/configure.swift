@@ -25,6 +25,8 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateUser())
     app.migrations.add(CreatePlant())
     app.migrations.add(CreateDates())
+    app.migrations.add(CreateDevice())
+    
     app.migrations.add(Filling())
     
     try await app.autoMigrate().get()

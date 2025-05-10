@@ -11,12 +11,12 @@ struct PlantsController: RouteCollection {
     func boot(routes: Vapor.RoutesBuilder) throws {
         let plantsGroup = routes.grouped("plants")
         
-        plantsGroup.get(use: getAllHandler)
         plantsGroup.get("ml", ":MLID", use: getHandler)
         let protected = plantsGroup.grouped(JWTMiddleware())
         protected.get(":id", use: getHandlerById)
         protected.put(":id", use: updateHandler)
         protected.post("create", use: createHandler)
+        protected.get(use: getAllHandlerForUser)
     }
     
     
@@ -81,5 +81,16 @@ struct PlantsController: RouteCollection {
     @Sendable func getAllHandler(_ req: Request) async throws -> [Plant] {
         let plants = try await Plant.query(on: req.db).all()
         return plants
+    }
+    
+    @Sendable func getAllHandlerForUser(_ req: Request) async throws -> [Plant] {
+        let payload = try req.auth.require(UserPayload.self)
+        let plants = try await Plant.query(on: req.db).all()
+        guard let user = try await User.find(payload.userID, on: req.db) else {
+            throw Abort(.notFound)
+        }
+        return plants.filter({ plant in
+            user.flowers.contains(where: {$0 == String(plant.id ?? UUID())})
+        })
     }
 }

@@ -36,10 +36,10 @@ class HomeController extends StateNotifier<HomeState> {
   final _svc = PlantService();
 
   HomeController() : super(HomeState(status: HomeStatus.loading)) {
-    _loadPlants();
+    loadPlants();
   }
 
-  Future<void> _loadPlants() async {
+  Future<void> loadPlants() async {
     try {
       final list = await _svc.fetchAllUserPlants();
       state = state.copyWith(

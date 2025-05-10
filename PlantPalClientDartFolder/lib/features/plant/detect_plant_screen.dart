@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:plant_pal_app/shared/services/plant_service.dart';
@@ -41,11 +42,22 @@ class _AddPlantViewState extends State<AddPlantView> {
   Plant? resultsServer;
   bool isInfoLoading = true;
   bool notRecognisable = false;
-  String clientText = "Is this really your plant?";
+  String clientText = "Это точно ваше растение?";
 
   @override
   void initState() {
     super.initState();
+  }
+
+  void resetState() {
+    setState(() {
+      _image = null;
+      resultsML = null;
+      resultsServer = null;
+      isInfoLoading = true;
+      notRecognisable = false;
+      clientText = "Это точно ваше растение?";
+    });
   }
 
   Future<void> recognizePlant() async {
@@ -54,23 +66,35 @@ class _AddPlantViewState extends State<AddPlantView> {
   }
 
   Future<void> postData(XFile file) async {
-    final uri = Uri.parse('http://localhost:8080/predict/plant');
+    final uri = Uri.parse('https://63b2-163-172-173-37.ngrok-free.app/predict/plant');
     final request = http.MultipartRequest('POST', uri)
       ..files.add(await http.MultipartFile.fromPath('image', file.path));
 
     final response = await request.send();
-    final responseBody = await response.stream.bytesToString();
 
-    final Map<String, dynamic> json = jsonDecode(responseBody);
-    resultsML = ResponseML.fromJson(json);
-
-    if (double.tryParse(resultsML?.accuracy ?? '-5') != null &&
-        double.parse(resultsML!.accuracy) >= -3.5) {
-      if (resultsML == null) return;
-      resultsServer = await PlantService().fetchByMlid(resultsML!.classML);
+    if (response.statusCode == 200) {
+      final responseBody = await response.stream.bytesToString();
+      try {
+        final Map<String, dynamic> json = jsonDecode(responseBody);
+        resultsML = ResponseML.fromJson(json);
+        if (double.tryParse(resultsML!.accuracy) != null &&
+            double.parse(resultsML!.accuracy) >= 0.5) {
+          resultsServer = await PlantService().fetchByMlid(resultsML!.classML);
+        } else {
+          setState(() {
+            clientText = "Мы не можем распознать Ваше растение";
+            notRecognisable = true;
+          });
+        }
+      } catch (e) {
+        setState(() {
+          clientText = "Error processing the response.";
+          notRecognisable = true;
+        });
+      }
     } else {
       setState(() {
-        clientText = "We cannot recognize your flower";
+        clientText = "Не удалось получить данные от сервера. Попробуйте снова.";
         notRecognisable = true;
       });
     }
@@ -88,7 +112,7 @@ class _AddPlantViewState extends State<AddPlantView> {
         _image = picked;
         isInfoLoading = true;
         notRecognisable = false;
-        clientText = "Is this really your plant?";
+        clientText = "Это точно ваше растение?";
       });
       await recognizePlant();
     }
@@ -97,21 +121,55 @@ class _AddPlantViewState extends State<AddPlantView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF8BC183),
+      backgroundColor: const Color(0xFF8BC183),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF789B2F),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            context.pop();
+          },
+        ),
+        title: const Text('Добавить растение', style: TextStyle(color: Colors.white)),
+      ),
       body: SafeArea(
         child: Center(
           child: _image == null
-              ? ElevatedButton.icon(
-            onPressed: _pickImage,
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('Take a photo'),
+              ? Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Сфотайте свое растение",
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Color(0xFF789B2F),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.camera_alt, color: Colors.white),
+                label: const Text('Открыть камеру', style: TextStyle(
+                  color: Colors.white,
+                )),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF789B2F),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+                  textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
           )
               : Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 clientText,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 28,
                   color: Color(0xFF789B2F),
                 ),
@@ -130,11 +188,11 @@ class _AddPlantViewState extends State<AddPlantView> {
                   children: [
                     Text(
                       resultsServer!.name,
-                      style: TextStyle(fontSize: 24, color: Color(0xFF789B2F)),
+                      style: const TextStyle(fontSize: 24, color: Color(0xFF789B2F)),
                     ),
                     Text(
                       resultsServer!.description,
-                      style: TextStyle(fontSize: 18, color: Color(0xFF789B2F)),
+                      style: const TextStyle(fontSize: 18, color: Color(0xFF789B2F)),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -143,13 +201,15 @@ class _AddPlantViewState extends State<AddPlantView> {
                           icon: const Icon(Icons.check_circle, size: 50, color: Colors.green),
                           onPressed: () async {
                             await AuthService().addFlowerToUser(resultsServer!.id);
+                            final result = await context.push('/plant/${resultsServer?.id}');
+                            if (result == 'updated') {
+                              context.pop('updated');
+                            }
                           },
                         ),
                         IconButton(
                           icon: const Icon(Icons.cancel, size: 50, color: Colors.red),
-                          onPressed: () {
-                            // Отказ от распознанного растения, можно добавить действие
-                          },
+                          onPressed: resetState,
                         ),
                       ],
                     ),
@@ -161,7 +221,7 @@ class _AddPlantViewState extends State<AddPlantView> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
-                      Text("Repeat", style: TextStyle(fontSize: 20, color: Color(0xFF789B2F))),
+                      Text("Повторить", style: TextStyle(fontSize: 20, color: Color(0xFF789B2F))),
                       SizedBox(width: 8),
                       Icon(Icons.refresh, color: Color(0xFF789B2F)),
                     ],

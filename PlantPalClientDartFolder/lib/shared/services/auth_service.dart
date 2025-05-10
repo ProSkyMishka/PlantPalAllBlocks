@@ -13,7 +13,7 @@ class AuthException implements Exception {
 
 class AuthService {
   final _storage = LocalStorage();
-  final _baseUrl = 'http://localhost:8080/auth'; // замени на свой
+  final _baseUrl = 'http://158.160.131.34:8080/auth'; // замени на свой
 
   bool _isValidUsername(String u) => RegExp(r'^[A-Za-z0-9]+$').hasMatch(u);
   bool _isValidPassword(String p) => RegExp(r'^(?=.*\d)[A-Za-z0-9]{8,}$').hasMatch(p);
